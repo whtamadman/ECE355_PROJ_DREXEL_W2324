@@ -62,18 +62,6 @@ void loadInstructions(Instruction_Memory *i_mem, const char *trace)
                 i_mem->last = &(i_mem->instructions[IMEM_index]);
             }
         }
-/*      char *raw_instr = strtok(line, " ");
-        if (strcmp(raw_instr, "add") == 0 ||
-            strcmp(raw_instr, "sub") == 0 ||
-            strcmp(raw_instr, "sll") == 0 ||
-            strcmp(raw_instr, "srl") == 0 ||
-            strcmp(raw_instr, "xor") == 0 ||
-            strcmp(raw_instr, "or")  == 0 ||
-            strcmp(raw_instr, "and") == 0)
-        {
-            parseRType(raw_instr, &(i_mem->instructions[IMEM_index]));
-            i_mem->last = &(i_mem->instructions[IMEM_index]);
-	} */
 
         IMEM_index++;
         PC += 4;
@@ -96,8 +84,8 @@ void parseRType(char *opr, Instruction *instr, int opcode_IN, int funct3_IN, int
     unsigned rs_1 = regIndex(reg);
 
     reg = strtok(NULL, ", ");
-    reg[strlen(reg)-1] = '\0';
     unsigned rs_2 = regIndex(reg);
+    reg[strlen(reg)-1] = '\0';
 
     // Contruct instruction
     instr->instruction |= opcode;
@@ -134,9 +122,9 @@ void parseIType(char *opr, Instruction *instr, int opcode_IN, int funct3_IN, int
         rs_1 = regIndex(reg);
 
         reg = strtok(NULL, ", ");
-        reg[strlen(reg)-1] = '\0';
         Imm += atoi(reg);
-        printf("%d",atoi(reg));
+        reg[strlen(reg)-1] = '\0';
+        printf("Imm: %d\n",atoi(reg));
     }
     //Load:
     else if (load == 1) {
