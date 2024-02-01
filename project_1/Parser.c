@@ -3,10 +3,10 @@
 // FIXME, implement this function.
 // Here shows an example on how to translate "add x10, x10, x25"
 
-char *Rtype[] = {"add","addw","and","or","sll","sllw","slt","sltu","sra","sraw","srl","srlw","sub","subw","xor"};
-int RtypeOpcode[] = {51,2,3,4,5,6,7,8,9,10,11,12,13,14};
-int Rtype_func3[] = {};
-int Rtype_func7[] = {};
+char *Rtype[] = {"add","sub","sll","slt","sltu","xor","srl","sra","or","and","addw","subw","sllw","srlw","sraw"};
+int RtypeOpcode[] = {51,51,51,51,51,51,51,51,51,51,51,51,51,51,51};
+int Rtype_func3[] = {0,0,1,2,3,4,5,5,6,7,0,0,1,5,5};
+int Rtype_func7[] = {0,32,0,0,0,0,0,32,0,0,0,32,0,0,32};
 
 char *Itype[] = {};
 int ItypeOpcode[] = {51,2,3,4,5,6,7,8,9,10,11,12,13,14};
@@ -46,9 +46,7 @@ void loadInstructions(Instruction_Memory *i_mem, const char *trace)
         char *raw_instr = strtok(line, " ");
         for (i = 0; i < 15; i++) {
             if (strcmp(raw_instr,Rtype[i]) == 0) {
-                printf(Rtype[i]);
-                printf("\n");
-                printf("%d\n", RtypeOpcode[i]);
+                printf("Function:%s\n\tOpcode:%d\n\tFunc3:%d\n\tFunc7:%d\n\n",Rtype[i],RtypeOpcode[i],Rtype_func3[i],Rtype_func7[i]);
                 parseRType(raw_instr, &(i_mem->instructions[IMEM_index]), RtypeOpcode[i], Rtype_func3[i], Rtype_func7[i]);
                 i_mem->last = &(i_mem->instructions[IMEM_index]);
             }
@@ -79,6 +77,14 @@ void parseRType(char *opr, Instruction *instr, int opcode_IN, int funct3_IN, int
     unsigned opcode = opcode_IN;
     unsigned funct3 = funct3_IN;
     unsigned funct7 = funct7_IN;
+
+
+     if (strcmp(opr, "add") == 0)
+    {
+        opcode = 51;
+        funct3 = 0;
+        funct7 = 0;
+    }
 
     char *reg = strtok(NULL, ", ");
     unsigned rd = regIndex(reg);
