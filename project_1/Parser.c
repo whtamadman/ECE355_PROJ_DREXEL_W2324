@@ -2,6 +2,22 @@
 
 // FIXME, implement this function.
 // Here shows an example on how to translate "add x10, x10, x25"
+
+char *Rtype[] = {"add","addw","and","or","sll","sllw","slt","sltu","sra","sraw","srl","srlw","sub","subw","xor"};
+int RtypeOpcode[] = {51,2,3,4,5,6,7,8,9,10,11,12,13,14};
+int Rtype_func3[] = {};
+int Rtype_func7[] = {};
+
+char *Itype[] = {};
+int ItypeOpcode[] = {51,2,3,4,5,6,7,8,9,10,11,12,13,14};
+int Itype_func3[] = {};
+int Itype_imm[] = {};
+
+char *Stype[] = {};
+int StypeOpcode[] = {51,2,3,4,5,6,7,8,9,10,11,12,13,14};
+int Stype_imm_11to5[] = {};
+int Stype_imm_4to0[] = {};
+
 void loadInstructions(Instruction_Memory *i_mem, const char *trace)
 {
     printf("Loading trace file: %s\n", trace);
@@ -26,7 +42,18 @@ void loadInstructions(Instruction_Memory *i_mem, const char *trace)
         i_mem->instructions[IMEM_index].addr = PC;
 
         // Extract operation
+        int i = 0;
         char *raw_instr = strtok(line, " ");
+        for (i = 0; i < 15; i++) {
+            if (strcmp(raw_instr,Rtype[i]) == 0) {
+                printf(Rtype[i]);
+                printf("\n");
+                printf("%d\n", RtypeOpcode[i]);
+                parseRType(raw_instr, &(i_mem->instructions[IMEM_index]), RtypeOpcode[i], Rtype_func3[i], Rtype_func7[i]);
+                i_mem->last = &(i_mem->instructions[IMEM_index]);
+            }
+        }
+/*      char *raw_instr = strtok(line, " ");
         if (strcmp(raw_instr, "add") == 0 ||
             strcmp(raw_instr, "sub") == 0 ||
             strcmp(raw_instr, "sll") == 0 ||
@@ -37,7 +64,7 @@ void loadInstructions(Instruction_Memory *i_mem, const char *trace)
         {
             parseRType(raw_instr, &(i_mem->instructions[IMEM_index]));
             i_mem->last = &(i_mem->instructions[IMEM_index]);
-	}
+	} */
 
         IMEM_index++;
         PC += 4;
@@ -46,19 +73,12 @@ void loadInstructions(Instruction_Memory *i_mem, const char *trace)
     fclose(fd);
 }
 
-void parseRType(char *opr, Instruction *instr)
+void parseRType(char *opr, Instruction *instr, int opcode_IN, int funct3_IN, int funct7_IN)
 {
     instr->instruction = 0;
-    unsigned opcode = 0;
-    unsigned funct3 = 0;
-    unsigned funct7 = 0;
-
-    if (strcmp(opr, "add") == 0)
-    {
-        opcode = 51;
-        funct3 = 0;
-        funct7 = 0;
-    }
+    unsigned opcode = opcode_IN;
+    unsigned funct3 = funct3_IN;
+    unsigned funct7 = funct7_IN;
 
     char *reg = strtok(NULL, ", ");
     unsigned rd = regIndex(reg);
