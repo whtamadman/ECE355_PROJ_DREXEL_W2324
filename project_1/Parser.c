@@ -134,7 +134,7 @@
 
             reg = strtok(NULL, ")");
             rs_1 = regIndex(reg);
-            //reg[strlen(reg)-1] = '\0';
+            reg[strlen(reg)-1] = '\0';
             printf("rs_1= %d\n",rs_1);
 
         }
