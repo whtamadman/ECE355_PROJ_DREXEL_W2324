@@ -13,7 +13,7 @@ int ItypeOpcode[] = {3,3,3,3,3,3,3,15,15,19,19,19,19,19,19,19,19,19,27,27,27,27}
 int Itype_func3[] = {0,1,2,3,4,5,6,0,1,0,1,2,3,4,5,5,6,7,0,1,5,5};
 int Itype_imm[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,32,0,0,0,0,0,32};
 64 + 32 + 3 = 99
-char *SBtype[] = {"beq,bne,blt,bge,bltu,bgeu"};
+char *SBtype[] = {"beq","bne","blt","bge","bltu","bgeu"};
 int SBtypeOpcode[] = {99,99,99,99,99,99};
 int SBfunc3[] = {0,1,4,5,6,7};
 
