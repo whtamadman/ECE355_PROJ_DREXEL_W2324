@@ -16,7 +16,6 @@ int Itype_imm[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,32,0,0,0,0,0,32};
 char *SBtype[] = {"beq","bne","blt","bge","bltu","bgeu"};
 int SBtypeOpcode[] = {99,99,99,99,99,99};
 int SBfunc3[] = {0,1,4,5,6,7};
-int SBtype_imm[] = {0,0,0,0,0,0,0,0};
 
 void loadInstructions(Instruction_Memory *i_mem, const char *trace)
 {
@@ -64,7 +63,7 @@ void loadInstructions(Instruction_Memory *i_mem, const char *trace)
         for (int i = 0; i < 6; i++) {
             if (strcmp(raw_instr, SBtype[i]) == 0) {
                 // printf("Function:%s\n\tOpcode:%d\n\tFunc3:%d\n\tImm:%d\n", SBtype[i], SBtypeOpcode[i], SBfunc3[i], SBtype_imm[i]);
-                parseSBType(raw_instr, &(i_mem->instructions[IMEM_index]), SBtypeOpcode[i], SBfunc3[i], SBtype_imm[i]);
+                parseSBType(raw_instr, &(i_mem->instructions[IMEM_index]), SBtypeOpcode[i], SBfunc3[i]);
                 i_mem->last = &(i_mem->instructions[IMEM_index]);
             }
         }
@@ -172,12 +171,12 @@ void decimalToBinary(int num, int *binImmed, int bits)
     }
 }
 
-void parseSBType(char *opr, Instruction *instr, int opcode_IN, int funct3_IN, int Imm_IN)
+void parseSBType(char *opr, Instruction *instr, int opcode_IN, int funct3_IN)
 {
     instr->instruction = 0;
     unsigned opcode = opcode_IN;
     unsigned funct3 = funct3_IN;
-    unsigned Imm = Imm_IN;
+    unsigned Imm = 0;
     int ImmBin[12];
     int load = 0;
     unsigned rd;
