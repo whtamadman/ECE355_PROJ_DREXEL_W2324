@@ -190,7 +190,7 @@ void parseSBType(char *opr, Instruction *instr, int opcode_IN, int funct3_IN, in
     rs_2 = regIndex(reg);
     reg = strtok(NULL, ", ");
     Imm += atoi(reg);
-    printf("%d\n", Imm);
+    //printf("%d\n", Imm);
     reg[strlen(reg)-1] = '\0';
 
     decimalToBinary(Imm, ImmBin, 12);
