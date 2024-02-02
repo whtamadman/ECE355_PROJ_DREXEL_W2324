@@ -16,7 +16,7 @@ int Itype_imm[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,32,0,0,0,0,0,32};
 char *SBtype[] = {"beq","bne","blt","bge","bltu","bgeu"};
 int SBtypeOpcode[] = {99,99,99,99,99,99};
 int SBfunc3[] = {0,1,4,5,6,7};
-
+int SBtype_imm[] = {0,0,0,0,0,0,0,0};
 
 void loadInstructions(Instruction_Memory *i_mem, const char *trace)
 {
@@ -47,16 +47,24 @@ void loadInstructions(Instruction_Memory *i_mem, const char *trace)
         //For R-Types
         for (int i = 0; i < 15; i++) {
             if (strcmp(raw_instr,Rtype[i]) == 0) {
-                printf("Function:%s\n\tOpcode:%d\n\tFunc3:%d\n\tFunc7:%d\n",Rtype[i], RtypeOpcode[i], Rtype_func3[i], Rtype_func7[i]);
+                // printf("Function:%s\n\tOpcode:%d\n\tFunc3:%d\n\tFunc7:%d\n",Rtype[i], RtypeOpcode[i], Rtype_func3[i], Rtype_func7[i]);
                 parseRType(raw_instr, &(i_mem->instructions[IMEM_index]), RtypeOpcode[i], Rtype_func3[i], Rtype_func7[i]);
                 i_mem->last = &(i_mem->instructions[IMEM_index]);
             }
         }
         //For I-Types
         for (int i = 0; i < 22; i++) {
-            if (strcmp(raw_instr,Itype[i]) == 0) {
-                printf("Function:%s\n\tOpcode:%d\n\tFunc3:%d\n\tImm:%d\n", Itype[i], ItypeOpcode[i], Itype_func3[i], Itype_imm[i]);
+            if (strcmp(raw_instr, Itype[i]) == 0) {
+                // printf("Function:%s\n\tOpcode:%d\n\tFunc3:%d\n\tImm:%d\n", Itype[i], ItypeOpcode[i], Itype_func3[i], Itype_imm[i]);
                 parseIType(raw_instr, &(i_mem->instructions[IMEM_index]), ItypeOpcode[i], Itype_func3[i], Itype_imm[i]);
+                i_mem->last = &(i_mem->instructions[IMEM_index]);
+            }
+        }
+        //For SB-Types
+        for (int i = 0; i < 6; i++) {
+            if (strcmp(raw_instr, SBtype[i]) == 0) {
+                // printf("Function:%s\n\tOpcode:%d\n\tFunc3:%d\n\tImm:%d\n", SBtype[i], SBtypeOpcode[i], SBfunc3[i], SBtype_imm[i]);
+                parseSBType(raw_instr, &(i_mem->instructions[IMEM_index]), SBtypeOpcode[i], SBfunc3[i], SBtype_imm[i]);
                 i_mem->last = &(i_mem->instructions[IMEM_index]);
             }
         }
@@ -134,19 +142,17 @@ void parseIType(char *opr, Instruction *instr, int opcode_IN, int funct3_IN, int
         reg = strtok(NULL, ", ");
         Imm += atoi(reg);
         reg[strlen(reg)-1] = '\0';
-        printf("%d",atoi(reg));
+        // printf("%d",atoi(reg));
     }
     //Load:
     else if (load == 1) {
         reg = strtok(NULL, "(");
         Imm += atoi(reg);
-        printf("Imm: %d\n",atoi(reg));
-
+        // printf("Imm: %d\n",atoi(reg));
         reg = strtok(NULL, ")");
         rs_1 = regIndex(reg);
         reg[strlen(reg)-1] = '\0';
-        printf("rs_1= %d\n",rs_1);
-
+        // printf("rs_1= %d\n",rs_1);
     }
 
     // Contruct instruction
@@ -156,6 +162,62 @@ void parseIType(char *opr, Instruction *instr, int opcode_IN, int funct3_IN, int
     instr->instruction |= (rs_1 << (7 + 5 + 3));
     instr->instruction |= (Imm << (7 + 5 + 3 + 5));
 }
+
+void decimalToBinary(int num, int *binImmed, int bits)
+{
+    num = num/2;
+    for (int i = bits - 1; i >= 0; i--) {
+        int bit = (num >> i) & 1;
+        binImmed[i] = bit;
+    }
+}
+
+void parseSBType(char *opr, Instruction *instr, int opcode_IN, int funct3_IN, int Imm_IN)
+{
+    instr->instruction = 0;
+    unsigned opcode = opcode_IN;
+    unsigned funct3 = funct3_IN;
+    unsigned Imm = Imm_IN;
+    int ImmBin[12];
+    int load = 0;
+    unsigned rd;
+    unsigned rs_1;
+    unsigned rs_2;
+
+    char *reg = strtok(NULL, ", ");
+    rs_1 = regIndex(reg);
+    reg = strtok(NULL, ", ");
+    rs_2 = regIndex(reg);
+    reg = strtok(NULL, ", ");
+    Imm += atoi(reg);
+    printf("%d\n", Imm);
+    reg[strlen(reg)-1] = '\0';
+
+    decimalToBinary(Imm, ImmBin, 12);
+    // for (int i=0; i<12; i++) {
+    //     printf("%d", ImmBin[i]);
+    // }
+    // printf("\n");
+
+    // Contruct instruction
+    instr->instruction |= opcode;
+    instr->instruction |= (ImmBin[10] << 7);
+    instr->instruction |= (ImmBin[0] << (7 + 1));
+    instr->instruction |= (ImmBin[1] << (7 + 2));
+    instr->instruction |= (ImmBin[2] << (7 + 3));
+    instr->instruction |= (ImmBin[3] << (7 + 4));
+    instr->instruction |= (funct3 << (7 + 5));
+    instr->instruction |= (rs_1 << (7 + 5 + 3));
+    instr->instruction |= (rs_2 << (7 + 5 + 3 + 5));
+    instr->instruction |= (ImmBin[4] << (7 + 5 + 3 + 5 + 5));
+    instr->instruction |= (ImmBin[5] << (7 + 5 + 3 + 5 + 5 + 1));
+    instr->instruction |= (ImmBin[6] << (7 + 5 + 3 + 5 + 5 + 2));
+    instr->instruction |= (ImmBin[7] << (7 + 5 + 3 + 5 + 5 + 3));
+    instr->instruction |= (ImmBin[8] << (7 + 5 + 3 + 5 + 5 + 4));
+    instr->instruction |= (ImmBin[9] << (7 + 5 + 3 + 5 + 5 + 5));
+    instr->instruction |= (ImmBin[11] << (7 + 5 + 3 + 5 + 5 + 6));
+}
+
 
 int regIndex(char *reg)
 {
