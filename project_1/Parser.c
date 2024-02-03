@@ -102,8 +102,8 @@ void parseRType(char *opr, Instruction *instr, int opcode_IN, int funct3_IN, int
 
     reg = strtok(NULL, ", ");
     
-    unsigned rs_2 = regIndex(reg);
     reg[strlen(reg)-1] = '\0';
+    unsigned rs_2 = regIndex(reg);
 
     // Contruct instruction
     instr->instruction |= opcode;
@@ -178,7 +178,6 @@ void parseSBType(char *opr, Instruction *instr, int opcode_IN, int funct3_IN)
     unsigned funct3 = funct3_IN;
     unsigned Imm = 0;
     int ImmBin[12];
-    int load = 0;
     unsigned rd;
     unsigned rs_1;
     unsigned rs_2;
