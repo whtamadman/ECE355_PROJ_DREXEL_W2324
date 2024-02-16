@@ -7,7 +7,6 @@ Core *initCore(Instruction_Memory *i_mem)
     core->PC = 0;
     core->instr_mem = i_mem;
     core->tick = tickFunc;
-
     // FIXME, initialize register file here.
     // core->data_mem[0] = ...
 
@@ -37,7 +36,7 @@ bool tickFunc(Core *core)
     }
     return true;
 }
-
+//REVIEW
 // FIXME (1). Control Unit. Refer to Figure 4.18.
 void ControlUnit(Signal input,
                  ControlSignals *signals)
@@ -53,24 +52,67 @@ void ControlUnit(Signal input,
         signals->Branch = 0;
         signals->ALUOp = 2;
     }
+    // For I-Type 3,15,19,27
+    if (input == 3 || input == 15 || input == 19 || input == 27)
+    {
+        signals->ALUSrc = 1;
+        signals->MemtoReg = 1;
+        signals->RegWrite = 1;
+        signals->MemRead = 1;
+        signals->MemWrite = 0;
+        signals->Branch = 0;
+        signals->ALUOp = 0;
+    }
+    // For SB-Type 99
+    if (input == 99) {
+        signals->ALUSrc = 0;
+        signals->RegWrite = 0;
+        signals->MemRead = 0;
+        signals->MemWrite = 1;
+        signals->Branch = 0;
+        signals->ALUOp = 1;
+    }
 }
-
+// REVIEW
 // FIXME (2). ALU Control Unit. Refer to Figure 4.12.
 Signal ALUControlUnit(Signal ALUOp,
                       Signal Funct7,
                       Signal Funct3)
-{
+{   //ld and sd
+    if (ALUOp == 0 && Funct7 == 0 && Funct3 == 0) {
+        return 2;
+    }
+    //beq
+    if (ALUOp == 1 && Funct7 == 0 && Funct3 == 0){
+        return 6;
+    }
     // For add
-    if (ALUOp == 2 && Funct7 == 0 && Funct3 == 0)
+    else if (ALUOp == 2 && Funct7 == 0 && Funct3 == 0)
     {
         return 2;
     }
+    // R-Type Sub
+    else if (ALUOp == 2 && Funct7 == 32 && Funct3 == 0)
+    {
+        return 6;
+    }
+    // R-Type Add
+    else if (ALUOp == 2 && Funct7 == 0 && Funct3 == 7)
+    {
+        return 0;
+    }
+    // R-Type OR
+    else if (ALUOp == 1 && Funct7 == 0 && Funct3 == 6)
+    {
+        return 1;
+    }
+    
 }
-
+//REVIEW
 // FIXME (3). Imme. Generator
 Signal ImmeGen(Signal input)
 {
-
+    input = (int32_t)input;
 }
 
 // FIXME (4). ALU
@@ -86,6 +128,7 @@ void ALU(Signal input_0,
         *ALU_result = (input_0 + input_1);
         if (*ALU_result == 0) { *zero = 1; } else { *zero = 0; }
     }
+
 }
 
 // (4). MUX
