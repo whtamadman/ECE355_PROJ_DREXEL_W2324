@@ -19,15 +19,33 @@ Core *initCore(Instruction_Memory *i_mem)
     return core;
 }
 
+int extract_bits_and_convert_to_decimal(int value, int start, int end) {
+    int decimal_value = 0;
+    int bit_position = 1; // Represents 2^0
+
+    // Iterate through each bit from start to end
+    for (int i = start; i <= end; i++) {
+        // If the bit is set, add the corresponding value to decimal_value
+        if ((value >> i) & 1) {
+            decimal_value += bit_position;
+        }
+        // Increment bit_position to represent the next power of 2
+        bit_position <<= 1;
+    }
+    return decimal_value;
+}
+
 // FIXME, implement this function
 bool tickFunc(Core *core)
 {
     // Steps may include
     // (Step 1) Reading instruction from instruction memory
     unsigned instruction = core->instr_mem->instructions[core->PC / 4].instruction;
-    
-    // (Step 2) ...
-    
+    int instruction_binary[32]; 
+    Signal opcode = extract_bits_and_convert_to_decimal(instruction, 0, 6);
+    ControlSignals instruction_CS;
+    ControlUnit(opcode,&instruction_CS);
+
     // (Step N) Increment PC. FIXME, is it correct to always increment PC by 4?!
     core->PC += 4;
 
@@ -44,7 +62,7 @@ bool tickFunc(Core *core)
 void ControlUnit(Signal input,
                  ControlSignals *signals)
 {
-    // For R-type
+    printf("%ld\n",input);   
     if (input == 51)
     {
         signals->ALUSrc = 0;
@@ -76,6 +94,7 @@ void ControlUnit(Signal input,
         signals->ALUOp = 1;
     }
 }
+
 // REVIEW
 // FIXME (2). ALU Control Unit. Refer to Figure 4.12.
 Signal ALUControlUnit(Signal ALUOp,
