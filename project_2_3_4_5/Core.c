@@ -7,11 +7,14 @@ Core *initCore(Instruction_Memory *i_mem)
     core->PC = 0;
     core->instr_mem = i_mem;
     core->tick = tickFunc;
-    // FIXME, initialize register file here.
-    // core->data_mem[0] = ...
 
-    // FIXME, initialize data memory here.
-    // core->reg_file[0] = ...
+    for (int i = 0; i < 32; i++) {
+        core->reg_file[i] = 0;
+    }
+
+    for (int i = 0; i < 32; i++) {
+        core->data_mem[i] = 0; 
+    }
 
     return core;
 }
@@ -126,6 +129,12 @@ void ALU(Signal input_0,
     if (ALU_ctrl_signal == 2)
     {
         *ALU_result = (input_0 + input_1);
+        if (*ALU_result == 0) { *zero = 1; } else { *zero = 0; }
+    }
+
+    if (ALU_ctrl_signal == 2)
+    {
+        *ALU_result = (input_0 - input_1);
         if (*ALU_result == 0) { *zero = 1; } else { *zero = 0; }
     }
 

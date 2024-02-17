@@ -67,18 +67,6 @@ void loadInstructions(Instruction_Memory *i_mem, const char *trace)
                 i_mem->last = &(i_mem->instructions[IMEM_index]);
             }
         }
-/*      char *raw_instr = strtok(line, " ");
-        if (strcmp(raw_instr, "add") == 0 ||
-            strcmp(raw_instr, "sub") == 0 ||
-            strcmp(raw_instr, "sll") == 0 ||
-            strcmp(raw_instr, "srl") == 0 ||
-            strcmp(raw_instr, "xor") == 0 ||
-            strcmp(raw_instr, "or")  == 0 ||
-            strcmp(raw_instr, "and") == 0)
-        {
-            parseRType(raw_instr, &(i_mem->instructions[IMEM_index]));
-            i_mem->last = &(i_mem->instructions[IMEM_index]);
-	} */
 
         IMEM_index++;
         PC += 4;
