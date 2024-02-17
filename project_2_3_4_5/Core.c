@@ -38,17 +38,58 @@ int extract_bits_and_convert_to_decimal(int value, int start, int end) {
 // FIXME, implement this function
 bool tickFunc(Core *core)
 {
-    // Steps may include
+   // Steps may include
     // (Step 1) Reading instruction from instruction memory
-    unsigned instruction = core->instr_mem->instructions[core->PC / 4].instruction;
-    Signal opcode = extract_bits_and_convert_to_decimal(instruction, 0, 6);
+    //unsigned instruction = core->instr_mem->instructions[core->PC / 4].instruction;
+    unsigned instruction = 1100285235;
+    Signal rd, rs1, rs2, funct3, funct7, imm;
+    Signal opcode = extract_bits_and_convert_to_decimal(instruction,0, 6);
+    Signal temp, zero;
+    int is_ld__sd = 0;
     ControlSignals instruction_CS;
+
+    int test[32]; 
+    dtob(instruction,test,32);
+
+    if (opcode == 51){
+        rd = extract_bits_and_convert_to_decimal(instruction,7,11);
+        rs1 = extract_bits_and_convert_to_decimal(instruction,15,19);
+        rs2 = extract_bits_and_convert_to_decimal(instruction,20,24);
+        funct3 = extract_bits_and_convert_to_decimal(instruction,12,14);
+        funct7 = extract_bits_and_convert_to_decimal(instruction,15,31);
+    }
+
+    if (opcode == 3 || opcode == 15 || opcode == 19 || opcode == 27){
+        imm = ImmeGen(extract_bits_and_convert_to_decimal(instruction,20,31)); 
+        rs1 = extract_bits_and_convert_to_decimal(instruction,15,19);
+        funct3 = extract_bits_and_convert_to_decimal(instruction,12,14);
+        rd = extract_bits_and_convert_to_decimal(instruction,7,11);
+        if (opcode == 3) {
+            is_ld__sd = 1;
+        }
+    }
+    printf("%d,%d,%d,%d,%d\n",rd,rs1,rs2,funct3,funct7);
     ControlUnit(opcode,&instruction_CS);
+    Signal O_MUX1 = MUX(instruction_CS.ALUSrc,rs2,imm);
+    Signal OP = ALUControlUnit(instruction_CS.ALUOp,funct7,funct3); 
+    printf("%d\n",OP);
+    ALU(core->reg_file[rs1],core->reg_file[O_MUX1],OP,&temp,&zero);
+    int O_MUX2 = MUX(instruction_CS.MemtoReg,temp,0);
+    core->reg_file[rd] = temp;
+    printf("%d:%d\n",rd,core->reg_file[rd]);
+    //ld
+    // if (is_ld__sd == 1){
+    //     if (instruction_CS.MemRead == 1){
+    //         temp = core->data_mem[temp]; 
+    //         core->reg_file[rd] = temp;
+    //     }
+    // }
+
+    //printf("%d\n",temp);
+    //printf("%d\n",instruction_CS.RegWrite);
 
     // (Step N) Increment PC. FIXME, is it correct to always increment PC by 4?!
     core->PC += 4;
-
-    ++core->clk;
     // Are we reaching the final instruction?
     if (core->PC > core->instr_mem->last->addr)
     {
