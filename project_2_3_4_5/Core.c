@@ -99,11 +99,11 @@ void ControlUnit(Signal input,
 Signal ALUControlUnit(Signal ALUOp,
                       Signal Funct7,
                       Signal Funct3)
-{   //ld and sd
+{   // ld and sd
     if (ALUOp == 0 && Funct7 == 0 && Funct3 == 0) {
         return 2;
     }
-    //beq
+    // beq
     if (ALUOp == 1 && Funct7 == 0 && Funct3 == 0){
         return 6;
     }
@@ -117,7 +117,7 @@ Signal ALUControlUnit(Signal ALUOp,
     {
         return 6;
     }
-    // R-Type Add
+    // R-Type AND
     else if (ALUOp == 2 && Funct7 == 0 && Funct3 == 7)
     {
         return 0;
@@ -147,14 +147,24 @@ void ALU(Signal input_0,
     if (ALU_ctrl_signal == 2)
     {
         *ALU_result = (input_0 + input_1);
-        if (*ALU_result == 0) { *zero = 1; } else { *zero = 0; }
     }
-
-    if (ALU_ctrl_signal == 2)
+    // For subtraction
+    else if (ALU_ctrl_signal == 6)
     {
         *ALU_result = (input_0 - input_1);
-        if (*ALU_result == 0) { *zero = 1; } else { *zero = 0; }
     }
+    // For AND (R-type)
+    else if (ALU_ctrl_signal == 0) 
+    {
+        *ALU_result = (input_0 & input_1);
+    }
+    // For OR (R-type)
+    else if (ALU_ctrl_signal == 1)
+    {
+        *ALU_result = (input_0 | input_1);
+    }
+    // zero flag
+    if (*ALU_result == 0) { *zero = 1; } else { *zero = 0; }
 
 }
 
