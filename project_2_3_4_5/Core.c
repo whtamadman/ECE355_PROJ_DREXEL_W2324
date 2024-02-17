@@ -41,7 +41,6 @@ bool tickFunc(Core *core)
     // Steps may include
     // (Step 1) Reading instruction from instruction memory
     unsigned instruction = core->instr_mem->instructions[core->PC / 4].instruction;
-    int instruction_binary[32]; 
     Signal opcode = extract_bits_and_convert_to_decimal(instruction, 0, 6);
     ControlSignals instruction_CS;
     ControlUnit(opcode,&instruction_CS);
