@@ -1,6 +1,8 @@
 #include "Core.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
+#include <string.h>
 
 Core *initCore(Instruction_Memory *i_mem)
 {
@@ -46,6 +48,77 @@ unsigned int instruct_split(unsigned int instruct, int start, int length) {
     }
     return fieldValue; //opcode last
 }
+
+unsigned extractImmediate(unsigned int decimalValue) {
+  char binaryString[33];  // Assuming 32-bit integer + 1 for null terminator
+    sprintf(binaryString, "%0*lu", 32, decimalValue);  // Initialize the string with spaces
+    int index = 31;
+    while (decimalValue > 0) {
+        binaryString[index--] = (decimalValue % 2) + '0';
+        decimalValue /= 2;
+    }
+    
+    char firstImm[2];
+    char secondImm[7];
+    char thirdImm[5];
+    char fourthImm[2];
+    char Imm[15];
+
+    strncpy(firstImm, binaryString, 1);
+    firstImm[1] = '\0';
+    strncpy(secondImm, binaryString + 1, 6);
+    secondImm[6] = '\0';
+    strncpy(thirdImm, binaryString + 20, 4);
+    thirdImm[4] = '\0';
+    strncpy(fourthImm, binaryString + 24, 1);
+    fourthImm[1] = '\0';
+
+    // firstImm[7] = '\0';
+    // secondImm[5] = '\0';
+    strcpy(Imm, firstImm);
+    strcat(Imm, secondImm);
+    strcat(Imm, thirdImm);
+    strcat(Imm, fourthImm);
+
+    int length = strlen(Imm);
+    int isNegative = 0;
+    int i;
+
+    if (Imm[0] == '1') {
+        isNegative = 1;
+        for (i = length - 1; i >= 0; i--) {
+            if (Imm[i] == '0') {
+                Imm[i] = '1';
+            } else {
+                Imm[i] = '0';
+            }
+        }
+        int carry = 1;
+        for (i = length - 1; i >= 0; i--) {
+            if (Imm[i]=='0' && carry == 1) {
+                Imm[i] = '1';
+                carry = 0;
+            } else if (Imm[i]=='1' && carry == 1) {
+                Imm[i] = '0';
+            }
+        }
+    }
+    int decimal = 0;
+    for (i = length - 1; i >= 0; i--) {
+        if (Imm[i]=='1') {
+            decimal += pow(2, length - 1 - i);
+        }
+    }
+    
+    if (isNegative) {
+        decimal = -decimal;
+    }
+    
+    printf("%d\n",decimal-1);
+
+    return (decimal-1);
+}
+
 // FIXME, implement this function
 bool tickFunc(Core *core)
 {
@@ -70,7 +143,7 @@ bool tickFunc(Core *core)
         printf("rd: %d, rs1: %d, funt3: %d, rs2: %d, funct7: %d\n",rd,rs1,funct3,rs2,funct7);
     }
 
-    if (opcode == 3 || opcode == 15 || opcode == 19 || opcode == 27){
+    else if (opcode == 3 || opcode == 15 || opcode == 19 || opcode == 27){
         imm = ImmeGen(instruct_split(instruction,0,12)); 
         rs1 = instruct_split(instruction,12,5);
         funct3 = instruct_split(instruction,17,3);
@@ -81,10 +154,13 @@ bool tickFunc(Core *core)
         printf("rd: %d, rs1: %d, funt3: %d, imm: %d\n",rd,rs1,funct3,imm);
     }
 
-    // if (opcode == 99) {
-
-    // }
-
+    else if (opcode == 99) {
+        imm = ImmeGen(extractImmediate(instruction));
+        rs1 = instruct_split(instruction,12,5);
+        rs2 = instruct_split(instruction,7,5);
+        funct3 = instruct_split(instruction,17,3);
+        printf("rs1: %d, funt3: %d, rs2: %d, imm: %d\n",rs1,funct3,rs2,imm);
+    }
 
     ControlUnit(opcode,&instruction_CS);
     
@@ -219,20 +295,29 @@ void ALU(Signal input_0, //4
     if (ALU_ctrl_signal == 2)
     {
         *ALU_result = (input_0 + input_1);
-        if (*ALU_result == 0) { *zero = 1; } else { *zero = 0; }
     }
 
     else if (ALU_ctrl_signal == 6)
     {
         *ALU_result = (input_0 - input_1);
-        if (*ALU_result == 0) { *zero = 1; } else { *zero = 0; }
     }
 
     else if (ALU_ctrl_signal == 61)
     {
         *ALU_result = input_0 << input_1;
-        if (*ALU_result == 0) { *zero = 1; } else { *zero = 0; }
     }
+    // For AND (R-type)
+    else if (ALU_ctrl_signal == 0) 
+    {
+        *ALU_result = (input_0 & input_1);
+    }
+    // For OR (R-type)
+    else if (ALU_ctrl_signal == 1)
+    {
+        *ALU_result = (input_0 | input_1);
+    }
+
+    if (*ALU_result == 0) { *zero = 1; } else { *zero = 0; }
 }
 
 // (4). MUX
