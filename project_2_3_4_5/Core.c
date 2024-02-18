@@ -282,7 +282,7 @@ Signal ALUControlUnit(Signal ALUOp,
     else if (ALUOp == 2 && Funct7 == 0 && Funct3 == 0){return 2;}
     // R-Type Subf
     else if (ALUOp == 2 && Funct7 == 16 && Funct3 == 0){return 6;}
-    // R-Type Add
+    // R-Type AND
     else if (ALUOp == 2 && Funct7 == 0 && Funct3 == 7){return 0;}
     // R-Type OR
     else if (ALUOp == 1 && Funct7 == 0 && Funct3 == 6){return 1;}
@@ -333,7 +333,7 @@ void ALU(Signal input_0, //4
     {
         *ALU_result = (input_0 | input_1);
     }
-    //BEQ
+    //BNE
     else if (ALU_ctrl_signal == 71)
     {
         *ALU_result = (input_0 != input_1);
