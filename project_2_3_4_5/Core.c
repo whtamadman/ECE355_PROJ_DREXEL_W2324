@@ -205,6 +205,18 @@ bool tickFunc(Core *core)
         }
     }
     // (Step N) Increment PC. FIXME, is it correct to always increment PC by 4?!
+    // if (opcode == 99) {
+    //     if (core->reg_file[rs1] != core->reg_file[rs2]) {
+    //         core->PC += imm;
+    //     }
+    //     else {
+    //         core->PC += 4;
+    //     }
+    // }
+    // else {
+    //     core->PC += 4;
+    // }
+
     core->PC += 4;
 
     ++core->clk;
