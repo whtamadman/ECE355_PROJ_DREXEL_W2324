@@ -5,7 +5,7 @@ TARGET	:= RVSim
 all: $(TARGET)
 
 $(TARGET): $(SOURCE)
-	$(CC) -o $(TARGET) $(SOURCE) -lm
+	$(CC) -o $(TARGET) $(SOURCE) -lm -w
 
 clean:
 	rm -f $(TARGET)

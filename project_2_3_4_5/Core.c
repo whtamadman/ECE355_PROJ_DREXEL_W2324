@@ -114,7 +114,7 @@ unsigned extractImmediate(unsigned int decimalValue) {
         decimal = -decimal;
     }
     
-    printf("%d\n",decimal-1);
+    //printf("%d\n",decimal-1);
 
     return (decimal-1);
 }
@@ -125,7 +125,7 @@ bool tickFunc(Core *core)
     // Steps may include
     // (Step 1) Reading instruction from instruction memory
     unsigned instruction = core->instr_mem->instructions[core->PC / 4].instruction;
-    printf("INSTRU: %ld\n", instruction);
+    printf("INSTRU: %d\n", instruction);
     Signal rd = 0; Signal rs1 = 0; Signal rs2 = 0; 
     Signal funct3 = 0; Signal funct7 = 0; Signal imm = 0; Signal OP = 0;
     Signal opcode = instruct_split(instruction,25, 7);
@@ -160,7 +160,7 @@ bool tickFunc(Core *core)
         rs1 = instruct_split(instruction,12,5);
         rs2 = instruct_split(instruction,7,5);
         funct3 = instruct_split(instruction,17,3);
-        printf("rs1: %ld, funt3: %ld, rs2: %ld, imm: %d\n",rs1,funct3,rs2,imm);
+        printf("rs1: %ld, funt3: %ld, rs2: %ld, imm: %ld\n",rs1,funct3,rs2,imm);
     }
 
     ControlUnit(opcode,&instruction_CS);
@@ -212,8 +212,7 @@ bool tickFunc(Core *core)
         uint32_t zero = 0;
         ALU(core->reg_file[rs1],core->reg_file[rs2],OP,&temp,&zero);
         int OMUX_3 = MUX(zero,core->PC+= 4,core->PC+=imm);
-        printf("%d: omux3\n",OMUX_3);
-        printf("%d vs %d\n",core->reg_file[rs1],core->reg_file[rs2]);
+        printf("%ld vs %ld\n",core->reg_file[rs1],core->reg_file[rs2]);
         if (core->reg_file[rs1] != core->reg_file[rs2]){
             core->PC = OMUX_3;
             printf("----------------Start of Next Loop--------------------\n\n");
