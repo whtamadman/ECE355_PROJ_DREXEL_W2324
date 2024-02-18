@@ -34,7 +34,7 @@ Core *initCore(Instruction_Memory *i_mem)
 
 unsigned int instruct_split(unsigned int instruct, int start, int length) {
     char binaryString[33];
-    sprintf(binaryString, "%0*lu", 32, instruct);
+    sprintf(binaryString, "%0*u", 32, instruct);
     int index = 31;
     while (instruct > 0 || index >= 31 - length) {
         binaryString[index--] = (instruct% 2) + '0';
@@ -51,7 +51,7 @@ unsigned int instruct_split(unsigned int instruct, int start, int length) {
 
 unsigned extractImmediate(unsigned int decimalValue) {
   char binaryString[33];  // Assuming 32-bit integer + 1 for null terminator
-    sprintf(binaryString, "%0*lu", 32, decimalValue);  // Initialize the string with spaces
+    sprintf(binaryString, "%0*u", 32, decimalValue);  // Initialize the string with spaces
     int index = 31;
     while (decimalValue > 0) {
         binaryString[index--] = (decimalValue % 2) + '0';
@@ -125,10 +125,11 @@ bool tickFunc(Core *core)
     // Steps may include
     // (Step 1) Reading instruction from instruction memory
     unsigned instruction = core->instr_mem->instructions[core->PC / 4].instruction;
+    printf("INSTRU: %ld\n", instruction);
     Signal rd = 0; Signal rs1 = 0; Signal rs2 = 0; 
-    Signal funct3 = 0; Signal funct7 = 0; Signal imm = 0;
+    Signal funct3 = 0; Signal funct7 = 0; Signal imm = 0; Signal OP = 0;
     Signal opcode = instruct_split(instruction,25, 7);
-    printf("Opcode: %d\n",opcode);
+    printf("Opcode: %ld\n",opcode);
     int is_ld__sd = 0;
     ControlSignals instruction_CS;
 
@@ -140,7 +141,7 @@ bool tickFunc(Core *core)
         rs2 = instruct_split(instruction,7,5);
         funct3 = instruct_split(instruction,17,3);
         funct7 = instruct_split(instruction,0,6);
-        printf("rd: %d, rs1: %d, funt3: %d, rs2: %d, funct7: %d\n",rd,rs1,funct3,rs2,funct7);
+        printf("rd: %ld, rs1: %ld, funt3: %ld, rs2: %ld, funct7: %ld\n",rd,rs1,funct3,rs2,funct7);
     }
 
     else if (opcode == 3 || opcode == 15 || opcode == 19 || opcode == 27){
@@ -151,7 +152,7 @@ bool tickFunc(Core *core)
         if (opcode == 3) {
             is_ld__sd = 1;
         }
-        printf("rd: %d, rs1: %d, funt3: %d, imm: %d\n",rd,rs1,funct3,imm);
+        printf("rd: %ld, rs1: %ld, funt3: %ld, imm: %ld\n",rd,rs1,funct3,imm);
     }
 
     else if (opcode == 99) {
@@ -159,16 +160,17 @@ bool tickFunc(Core *core)
         rs1 = instruct_split(instruction,12,5);
         rs2 = instruct_split(instruction,7,5);
         funct3 = instruct_split(instruction,17,3);
-        printf("rs1: %d, funt3: %d, rs2: %d, imm: %d\n",rs1,funct3,rs2,imm);
+        printf("rs1: %ld, funt3: %ld, rs2: %ld, imm: %d\n",rs1,funct3,rs2,imm);
     }
 
     ControlUnit(opcode,&instruction_CS);
     
     Signal O_MUX1 = MUX(instruction_CS.ALUSrc,rs2,imm);
 
-    Signal OP = ALUControlUnit(instruction_CS.ALUOp,funct7,funct3);
+    OP = ALUControlUnit(instruction_CS.ALUOp,funct7,funct3);
 
-    printf("OP: %d\n",OP);
+
+    printf("OP: %ld\n",OP);
     //R-Type
     if (opcode == 51){
         uint32_t temp; 
@@ -176,7 +178,7 @@ bool tickFunc(Core *core)
         ALU(core->reg_file[rs1],core->reg_file[O_MUX1],OP,&temp,&zero);
         int O_MUX2 = MUX(instruction_CS.MemtoReg,temp,NULL);
         core->reg_file[rd] = temp;
-        printf("%d:%d\n\n",rd,core->reg_file[rd]);
+        printf("%ld:%ld\n\n",rd,core->reg_file[rd]);
     }
 
     // Other I-types
@@ -186,7 +188,7 @@ bool tickFunc(Core *core)
         ALU(core->reg_file[rs1],imm,OP,&temp,&zero);
         int O_MUX2 = MUX(instruction_CS.MemtoReg,temp,0);
         core->reg_file[rd] = temp;
-        printf("%d:%d\n\n",rd,core->reg_file[rd]);
+        printf("%ld:%ld\n\n",rd,core->reg_file[rd]);
     }
 
     //LD or SD
@@ -201,23 +203,25 @@ bool tickFunc(Core *core)
         if (instruction_CS.MemRead == 1){ 
             uint32_t over = *(rs1 + imm);
             core->reg_file[rd] = over;
-            printf("%d:%d\n\n",rd,core->reg_file[rd]);
+            printf("%ld:%ld\n\n",rd,core->reg_file[rd]);
         }
     }
-    // (Step N) Increment PC. FIXME, is it correct to always increment PC by 4?!
-    // if (opcode == 99) {
-    //     if (core->reg_file[rs1] != core->reg_file[rs2]) {
-    //         core->PC += imm;
-    //     }
-    //     else {
-    //         core->PC += 4;
-    //     }
-    // }
-    // else {
-    //     core->PC += 4;
-    // }
-
-    core->PC += 4;
+    //(Step N) Increment PC. FIXME, is it correct to always increment PC by 4?!
+    if (opcode == 99) {
+        uint32_t temp = 0; 
+        uint32_t zero = 0;
+        ALU(core->reg_file[rs1],core->reg_file[rs2],OP,&temp,&zero);
+        int OMUX_3 = MUX(zero,core->PC+= 4,core->PC+=imm);
+        printf("%d: omux3\n",OMUX_3);
+        printf("%d vs %d\n",core->reg_file[rs1],core->reg_file[rs2]);
+        if (core->reg_file[rs1] != core->reg_file[rs2]){
+            core->PC = OMUX_3;
+            printf("----------------Start of Next Loop--------------------\n\n");
+        }
+    }
+    else {
+        core->PC += 4;
+    }
 
     ++core->clk;
     // Are we reaching the final instruction?
@@ -259,8 +263,8 @@ void ControlUnit(Signal input,
         signals->ALUSrc = 0;
         signals->RegWrite = 0;
         signals->MemRead = 0;
-        signals->MemWrite = 1;
-        signals->Branch = 0;
+        signals->MemWrite = 0;
+        signals->Branch = 1;
         signals->ALUOp = 1;
     }
 }
@@ -271,10 +275,10 @@ Signal ALUControlUnit(Signal ALUOp,
                       Signal Funct7,
                       Signal Funct3)
 {   //ld and sd
-    printf("ALUOP:%d, F7:%d, F3:%d\n",ALUOp,Funct7,Funct3);
+    printf("ALUOP:%ld, F7:%ld, F3:%ld\n",ALUOp,Funct7,Funct3);
     if (ALUOp == 0 && Funct7 == 0 && Funct3 == 3) {return 2;}
     //beq
-    if (ALUOp == 1 && Funct7 == 0 && Funct3 == 0){return 6;}
+    else if (ALUOp == 1 && Funct7 == 0 && Funct3 == 0){return 6;}
     // For add
     else if (ALUOp == 2 && Funct7 == 0 && Funct3 == 0){return 2;}
     // R-Type Subf
@@ -287,6 +291,8 @@ Signal ALUControlUnit(Signal ALUOp,
     else if (ALUOp == 0 && Funct3 == 1 && Funct7 == 0) {return 61;}
     // Addi
     else if (ALUOp == 0 && Funct3 == 0 && Funct7 == 0) {return 2;}
+    //bne
+    else if (ALUOp == 0 && Funct3 == 0 && Funct7 == 1) {return 71;}
 }
 
 //REVIEW
@@ -328,8 +334,12 @@ void ALU(Signal input_0, //4
     {
         *ALU_result = (input_0 | input_1);
     }
-
-    if (*ALU_result == 0) { *zero = 1; } else { *zero = 0; }
+    //BEQ
+    else if (ALU_ctrl_signal == 71)
+    {
+        *ALU_result = (input_0 != input_1);
+    }
+    if (*ALU_result == 0) { *zero = 1; } else { *zero = 0;}
 }
 
 // (4). MUX
