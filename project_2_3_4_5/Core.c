@@ -12,25 +12,19 @@ Core *initCore(Instruction_Memory *i_mem)
     core->instr_mem = i_mem;
     core->tick = tickFunc;
 
-    for (int i = 0; i < 32; i++) {
-        core->reg_file[i] = 0;
-    }
+    core->data_mem[0] = 16;
+    core->data_mem[1] = 128;
+    core->data_mem[2] = 8;
+    core->data_mem[3] = 4;
 
-    for (int i = 0; i < 32; i++) {
-        core->data_mem[i] = 0; 
-    }
     core->reg_file[8] = 16;
-    core->reg_file[10] = 4;
+    core->reg_file[10] = 4; 
     core->reg_file[11] = 0;
     core->reg_file[22] = 1;
     core->reg_file[24] = 0;
     core->reg_file[25] = 4;
     return core;
 }
-
-// uint32_t ld_imm(uint32_t offset) {
-//     return core->data_mem[offset];
-// }
 
 unsigned int instruct_split(unsigned int instruct, int start, int length) {
     char binaryString[33];
@@ -178,6 +172,7 @@ bool tickFunc(Core *core)
         ALU(core->reg_file[rs1],core->reg_file[O_MUX1],OP,&temp,&zero);
         int O_MUX2 = MUX(instruction_CS.MemtoReg,temp,NULL);
         core->reg_file[rd] = temp;
+        printf("R-Type Memory Address: %p\n",rs1,(void*)&core->reg_file[rd]);
         printf("%ld:%ld\n\n",rd,core->reg_file[rd]);
     }
 
@@ -188,21 +183,18 @@ bool tickFunc(Core *core)
         ALU(core->reg_file[rs1],imm,OP,&temp,&zero);
         int O_MUX2 = MUX(instruction_CS.MemtoReg,temp,0);
         core->reg_file[rd] = temp;
+        printf("I-Type Memory Address: %p\n",rd);
         printf("%ld:%ld\n\n",rd,core->reg_file[rd]);
     }
 
     //LD or SD
     if (is_ld__sd == 1 && opcode == 3){
         //Init Array
-            uint32_t *rs1 = &core->data_mem[10];
-            rs1[0] = 16;
-            rs1[1] = 128;
-            rs1[2] = 8;
-            rs1[3] = 4;
-
         if (instruction_CS.MemRead == 1){ 
-            uint32_t over = *(rs1 + imm);
-            core->reg_file[rd] = over;
+            printf("Before Change:%p\n",&core->data_mem[rs1]);
+            int ldtemp = core->reg_file[rs1] + imm/8;
+            printf("x%d = data_mem[%d]: %p\n",rd, ldtemp, &core->data_mem[rs1]);
+            core->reg_file[rd] = core->data_mem[rs1];
             printf("%ld:%ld\n\n",rd,core->reg_file[rd]);
         }
     }
