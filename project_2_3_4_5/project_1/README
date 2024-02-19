@@ -1,7 +1,0 @@
-
-
-To compile:
-make
-
-To run:
-./RVSim cpu_traces/example_cpu_trace
