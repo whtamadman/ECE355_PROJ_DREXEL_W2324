@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
-unsigned instruction; int is_ld_sd; ControlSignals instruction_CS; Signal rd; Signal rs1; Signal rs2; Signal funct3; Signal funct7; Signal imm; Signal OP; Signal opcode; Signal O_MUX1;
 
 Core *initCore(Instruction_Memory *i_mem)
 {
@@ -13,12 +12,17 @@ Core *initCore(Instruction_Memory *i_mem)
     core->instr_mem = i_mem;
     core->tick = tickFunc;
 
-    core->reg_file[1] = 0;
-    core->reg_file[2] = 10; 
-    core->reg_file[3] = -15;
-    core->reg_file[4] = 20;
-    core->reg_file[5] = 30;
-    core->reg_file[6] = -35;
+    core->data_mem[0] = 16;
+    core->data_mem[1] = 128;
+    core->data_mem[2] = 8;
+    core->data_mem[3] = 4;
+
+    core->reg_file[8] = 16;
+    core->reg_file[10] = 4; 
+    core->reg_file[11] = 0;
+    core->reg_file[22] = 1;
+    core->reg_file[24] = 0;
+    core->reg_file[25] = 4;
     return core;
 }
 
@@ -109,15 +113,22 @@ unsigned extractImmediate(unsigned int decimalValue) {
     return (decimal-1);
 }
 
-unsigned int fetch(Core* core) {
-    instruction = core->instr_mem->instructions[core->PC / 4].instruction;
+// FIXME, implement this function
+bool tickFunc(Core *core)
+{
+    // Steps may include
+    // (Step 1) Reading instruction from instruction memory
+    unsigned instruction = core->instr_mem->instructions[core->PC / 4].instruction;
     printf("INSTRU: %d\n", instruction);
-    return instruction;
-}
-
-ControlSignals decode(Core *core) {
-    opcode = instruct_split(instruction,25, 7);
+    Signal rd = 0; Signal rs1 = 0; Signal rs2 = 0; 
+    Signal funct3 = 0; Signal funct7 = 0; Signal imm = 0; Signal OP = 0;
+    Signal opcode = instruct_split(instruction,25, 7);
     printf("Opcode: %ld\n",opcode);
+    int is_ld__sd = 0;
+    ControlSignals instruction_CS;
+
+    int test[32]; 
+
     if (opcode == 51){
         rd = instruct_split(instruction,20,5);
         rs1 = instruct_split(instruction,12,5);
@@ -133,7 +144,7 @@ ControlSignals decode(Core *core) {
         funct3 = instruct_split(instruction,17,3);
         rd = instruct_split(instruction,20,5);
         if (opcode == 3) {
-            is_ld_sd = 1;
+            is_ld__sd = 1;
         }
         printf("rd: %ld, rs1: %ld, funt3: %ld, imm: %ld\n",rd,rs1,funct3,imm);
     }
@@ -148,16 +159,12 @@ ControlSignals decode(Core *core) {
 
     ControlUnit(opcode,&instruction_CS);
     
-    O_MUX1 = MUX(instruction_CS.ALUSrc,rs2,imm);
+    Signal O_MUX1 = MUX(instruction_CS.ALUSrc,rs2,imm);
 
     OP = ALUControlUnit(instruction_CS.ALUOp,funct7,funct3);
 
+
     printf("OP: %ld\n",OP);
-
-    return instruction_CS;
-}
-
-void execute(Core *core) {
     //R-Type
     if (opcode == 51){
         uint32_t temp; 
@@ -168,6 +175,7 @@ void execute(Core *core) {
         printf("R-Type Memory Address: %p\n",rs1,(void*)&core->reg_file[rd]);
         printf("%ld:%ld\n\n",rd,core->reg_file[rd]);
     }
+
     // Other I-types
     else if (opcode == 15 || opcode == 19 || opcode == 27) {
         uint32_t temp = 0; 
@@ -178,8 +186,9 @@ void execute(Core *core) {
         printf("I-Type Memory Address: %p\n",rd);
         printf("%ld:%ld\n\n",rd,core->reg_file[rd]);
     }
+
     //LD or SD
-    if (is_ld_sd == 1 && opcode == 3){
+    if (is_ld__sd == 1 && opcode == 3){
         //Init Array
         if (instruction_CS.MemRead == 1){ 
             printf("Before Change:%p\n",&core->data_mem[rs1]);
@@ -189,24 +198,6 @@ void execute(Core *core) {
             printf("%ld:%ld\n\n",rd,core->reg_file[rd]);
         }
     }
-}
-
-void something(Core *core) {
-
-}
-
-void write_back(Core *core) {
-
-}
-
-// FIXME, implement this function
-bool tickFunc(Core *core)
-{
-    // Steps may include
-    // (Step 1) Reading instruction from instruction memory
-    fetch(core);
-    decode(core);
-    execute(core);
     //(Step N) Increment PC. FIXME, is it correct to always increment PC by 4?!
     if (opcode == 99) {
         uint32_t temp = 0; 
