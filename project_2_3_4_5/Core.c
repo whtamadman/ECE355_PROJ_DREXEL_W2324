@@ -19,6 +19,8 @@ Core *initCore(Instruction_Memory *i_mem)
     core->reg_file[4] = 20;
     core->reg_file[5] = 30;
     core->reg_file[6] = -35;
+    core->data_mem[40] = -63;
+    core->data_mem[48] = 63;
     return core;
 }
 
