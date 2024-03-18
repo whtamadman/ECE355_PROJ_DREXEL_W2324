@@ -229,9 +229,11 @@ bool tickFunc(Core *core)
     fetch(core);
     decode(core);
     if (execute(core) == 0){
-        memory_access(core);
         write_back(core);
         core->PC += 4;
+    }
+    else {
+        memory_access(core);
     }
     ++core->clk;
     // Are we reaching the final instruction?
