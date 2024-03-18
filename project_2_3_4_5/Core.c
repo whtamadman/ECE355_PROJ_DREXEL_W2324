@@ -4,7 +4,7 @@
 #include <math.h>
 #include <string.h>
 unsigned instruction; int is_ld_sd; ControlSignals instruction_CS; Signal rd; Signal rs1; Signal rs2; Signal funct3; Signal funct7; Signal imm; Signal OP; Signal opcode; Signal O_MUX1;
-
+int cycles = 0;
 Core *initCore(Instruction_Memory *i_mem)
 {
     Core *core = (Core *)malloc(sizeof(Core));
@@ -112,12 +112,14 @@ unsigned extractImmediate(unsigned int decimalValue) {
 }
 
 unsigned int fetch(Core* core) {
+    cycles++;
     instruction = core->instr_mem->instructions[core->PC / 4].instruction;
     printf("INSTRU: %d\n", instruction);
     return instruction;
 }
 
 ControlSignals decode(Core *core) {
+    cycles++;
     opcode = instruct_split(instruction,25, 7);
     printf("Opcode: %ld\n",opcode);
     if (opcode == 51){
@@ -161,6 +163,7 @@ ControlSignals decode(Core *core) {
 uint32_t temp = 0; 
 uint32_t zero = 0;
 int execute(Core *core) {
+    cycles++;
     //R-Type
     if (opcode == 51){
         ALU(core->reg_file[rs1],core->reg_file[O_MUX1],OP,&temp,&zero);
@@ -190,11 +193,12 @@ int execute(Core *core) {
         if (instruction_CS.MemRead == 1){ 
             printf("Ld/Sd Detected\n");
         }
-        return 0;
+        return 2;
     }
 }
 
 void memory_access(Core *core) {
+    cycles++;
     if (is_ld_sd == 1 && opcode == 3){
         if (instruction_CS.MemRead == 1){ 
             printf("Before Change:%p\n",&core->data_mem[rs1]);
@@ -205,36 +209,46 @@ void memory_access(Core *core) {
 }
 
 void write_back(Core *core) {
+    cycles++;
     if (opcode == 51){
         int O_MUX2 = MUX(instruction_CS.MemtoReg,temp,NULL);
         core->reg_file[rd] = temp;
         printf("R-Type Memory Address: %p\n",rs1,(void*)&core->reg_file[rd]);
-        printf("%ld:%ld\n\n",rd,core->reg_file[rd]);
+        printf("%ld:%ld\n",rd,core->reg_file[rd]);
     }
     else if (opcode == 15 || opcode == 19 || opcode == 27) {
         int O_MUX2 = MUX(instruction_CS.MemtoReg,temp,0);
         core->reg_file[rd] = temp;
         printf("I-Type Memory Address: %p\n",rd);
-        printf("%ld:%ld\n\n",rd,core->reg_file[rd]);
+        printf("%ld:%ld\n",rd,core->reg_file[rd]);
     }
     else if (is_ld_sd == 1 && opcode == 3){
         core->reg_file[rd] = core->data_mem[rs1];
-        printf("%ld:%ld\n\n",rd,core->reg_file[rd]);
+        printf("%ld:%ld\n",rd,core->reg_file[rd]);
     }
 }
 
 // FIXME, implement this function
 bool tickFunc(Core *core)
 {
+    cycles = 0;
+    int executeNUM;
     fetch(core);
     decode(core);
-    if (execute(core) == 0){
+    executeNUM = execute(core);
+    if (executeNUM == 0){
+        write_back(core);
+        core->PC += 4;
+    }
+    else if (executeNUM == 2){
+        memory_access(memory_access);
         write_back(core);
         core->PC += 4;
     }
     else {
-        memory_access(core);
+        printf("Branch Detected\n");
     }
+    printf("%d Cycles Taken\n\n",cycles);
     ++core->clk;
     // Are we reaching the final instruction?
     if (core->PC > core->instr_mem->last->addr)
