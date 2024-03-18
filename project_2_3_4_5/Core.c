@@ -158,59 +158,21 @@ ControlSignals decode(Core *core) {
 
     return instruction_CS;
 }
-
-void execute(Core *core) {
+uint32_t temp = 0; 
+uint32_t zero = 0;
+int execute(Core *core) {
     //R-Type
     if (opcode == 51){
-        uint32_t temp; 
-        uint32_t zero;
         ALU(core->reg_file[rs1],core->reg_file[O_MUX1],OP,&temp,&zero);
-        int O_MUX2 = MUX(instruction_CS.MemtoReg,temp,NULL);
-        core->reg_file[rd] = temp;
-        printf("R-Type Memory Address: %p\n",rs1,(void*)&core->reg_file[rd]);
-        printf("%ld:%ld\n\n",rd,core->reg_file[rd]);
+        return 0;
     }
     // Other I-types
     else if (opcode == 15 || opcode == 19 || opcode == 27) {
-        uint32_t temp = 0; 
-        uint32_t zero = 0;
         ALU(core->reg_file[rs1],imm,OP,&temp,&zero);
-        int O_MUX2 = MUX(instruction_CS.MemtoReg,temp,0);
-        core->reg_file[rd] = temp;
-        printf("I-Type Memory Address: %p\n",rd);
-        printf("%ld:%ld\n\n",rd,core->reg_file[rd]);
+        return 0;
     }
-    //LD or SD
-    if (is_ld_sd == 1 && opcode == 3){
-        //Init Array
-        if (instruction_CS.MemRead == 1){ 
-            printf("Before Change:%p\n",&core->data_mem[rs1]);
-            int ldtemp = core->reg_file[rs1] + imm/8;
-            printf("x%d = data_mem[%d]: %p\n",rd, ldtemp, &core->data_mem[rs1]);
-            core->reg_file[rd] = core->data_mem[rs1];
-            printf("%ld:%ld\n\n",rd,core->reg_file[rd]);
-        }
-    }
-}
-
-void something(Core *core) {
-
-}
-
-void write_back(Core *core) {
-
-}
-
-// FIXME, implement this function
-bool tickFunc(Core *core)
-{
-    // Steps may include
-    // (Step 1) Reading instruction from instruction memory
-    fetch(core);
-    decode(core);
-    execute(core);
-    //(Step N) Increment PC. FIXME, is it correct to always increment PC by 4?!
-    if (opcode == 99) {
+    // Branch
+    else if (opcode == 99) {
         uint32_t temp = 0; 
         uint32_t zero = 0;
         ALU(core->reg_file[rs1],core->reg_file[rs2],OP,&temp,&zero);
@@ -220,11 +182,57 @@ bool tickFunc(Core *core)
             core->PC = OMUX_3;
             printf("----------------Start of Next Loop--------------------\n\n");
         }
+        return 1;
     }
-    else {
+    //LD or SD
+    else if (is_ld_sd == 1 && opcode == 3){
+        //Init Array
+        if (instruction_CS.MemRead == 1){ 
+            printf("Ld/Sd Detected\n");
+        }
+        return 0;
+    }
+}
+
+void memory_access(Core *core) {
+    if (is_ld_sd == 1 && opcode == 3){
+        if (instruction_CS.MemRead == 1){ 
+            printf("Before Change:%p\n",&core->data_mem[rs1]);
+            int ldtemp = core->reg_file[rs1] + imm/8;
+            printf("x%d = data_mem[%d]: %p\n",rd, ldtemp, &core->data_mem[rs1]);
+        }
+    }
+}
+
+void write_back(Core *core) {
+    if (opcode == 51){
+        int O_MUX2 = MUX(instruction_CS.MemtoReg,temp,NULL);
+        core->reg_file[rd] = temp;
+        printf("R-Type Memory Address: %p\n",rs1,(void*)&core->reg_file[rd]);
+        printf("%ld:%ld\n\n",rd,core->reg_file[rd]);
+    }
+    else if (opcode == 15 || opcode == 19 || opcode == 27) {
+        int O_MUX2 = MUX(instruction_CS.MemtoReg,temp,0);
+        core->reg_file[rd] = temp;
+        printf("I-Type Memory Address: %p\n",rd);
+        printf("%ld:%ld\n\n",rd,core->reg_file[rd]);
+    }
+    else if (is_ld_sd == 1 && opcode == 3){
+        core->reg_file[rd] = core->data_mem[rs1];
+        printf("%ld:%ld\n\n",rd,core->reg_file[rd]);
+    }
+}
+
+// FIXME, implement this function
+bool tickFunc(Core *core)
+{
+    fetch(core);
+    decode(core);
+    if (execute(core) == 0){
+        memory_access(core);
+        write_back(core);
         core->PC += 4;
     }
-
     ++core->clk;
     // Are we reaching the final instruction?
     if (core->PC > core->instr_mem->last->addr)
